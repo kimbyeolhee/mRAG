@@ -172,3 +172,21 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# indexes folder
+indexes/
+
+# datasets folder
+datasets/
+
+# virtualenv
+mrag_env/
+
+# experiments folder
+experiments/
+
+# generated queries folder
+generated_queries/
+
+# outputs folder
+outputs/
