@@ -3,6 +3,7 @@ defaults:
     - retriever: null
     - generator: null
     - dataset: null
+    - prompt: basic
 
 # main variables locating the local data folder and index
 run_name: null
@@ -10,7 +11,9 @@ dataset_folder: 'datasets/'
 index_folder: 'indexes/'
 runs_folder: 'runs/'
 generated_query_folder: 'generated_queries/'
+processed_context_folder: 'processed_contexts/'
 experiments_folder: 'experiments/'    
 
 # topk documents to retrieve, rerank and to use for generation
 retrieve_top_k: 5
+generation_top_k: 5
