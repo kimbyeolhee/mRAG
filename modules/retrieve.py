@@ -14,17 +14,32 @@ class Retrieve:
                 batch_size=64, 
                 batch_size_sim=512, 
                 pyserini_num_threads=1, # for sparase retrieval(like BM25)
+                continue_batch=None,
                 ):
-
+        self.continue_batch = continue_batch
         self.batch_size = batch_size
         self.batch_size_sim = batch_size_sim
         self.pyserini_num_threads = pyserini_num_threads
-        # instantiate model
+        
         self.model = instantiate(init_args)
 
-    
+
+    def index(self, dataset, index_path, query_or_doc, overwrite_index=False):
+        dataset = dataset[query_or_doc]
+
+        if not os.path.exists(index_path) or overwrite_index:
+            if self.model.model_name == "bm25" and query_or_doc == "doc":
+                self.model.index(dataset, index_path, num_threads=self.pyserini_num_threads)
+            elif self.model.model_name == "bm25" and query_or_doc == "query":
+                pass
+            else:
+                dataset = dataset.remove_columns(["id"])
+                _ = self.encode_and_save(dataset, save_path=index_path, query_or_doc=query_or_doc)
+
+
+
     @torch.no_grad()
-    def encode_and_save(self, dataset, save_path, query_or_doc, chunk_size=15000):
+    def encode_and_save(self, dataset, save_path, query_or_doc, chunk_size=150000):
         save_every_n_batches = chunk_size // self.batch_size
         total_n_batches = len(dataset) // self.batch_size + int(bool(len(dataset) % self.batch_size))
 
@@ -55,18 +70,6 @@ class Retrieve:
 
         return None
 
-
-    def index(self, dataset, index_path, query_or_doc, overwrite_index=False):
-        dataset = dataset[query_or_doc]
-
-        if not os.path.exists(index_path) or overwrite_index:
-            if self.model.model_name == "bm25" and query_or_doc == "doc":
-                self.model.index(dataset, index_path, num_threads=self.pyserini_num_threads)
-            elif self.model.model_name == "bm25" and query_or_doc == "query":
-                pass
-            else:
-                dataset = dataset.remove_columns(["id"])
-                _ = self.encode_and_save(dataset, save_path=index_path, query_or_doc=query_or_doc)
 
 
     def retrieve(self, dataset, query_embeds_path, doc_embeds_path, top_k_documents, return_docs=False, overwrite_index=False):

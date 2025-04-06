@@ -23,5 +23,5 @@ def main(config):
     mrag.eval(dataset_split=dataset_split)
 
 if __name__ == "__main__":
-    # set_start_method("spawn")
+    set_start_method("spawn")
     main()

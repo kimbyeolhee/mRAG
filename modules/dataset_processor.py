@@ -11,6 +11,72 @@ from functools import partial
 import random
 from typing import Dict
 
+
+class ProcessDatasets:
+    """
+    Static class to process datasets.
+
+    Methods:
+    - process: Process the datasets.
+    - check_instantiate: Check the instantiation of datasets.
+    """
+    
+    @staticmethod
+    def process(datasets, out_folder="datasets", num_proc=1, overwrite=False, debug=False, shuffle_labels=False):
+        def sanity_checks(dataset):
+            for example in tqdm(dataset, "Checking dataset.."):
+                for field_name, field_value in example.items():
+                    if field_value is None:
+                        raise ValueError(f"Found None value in '{field_name}' field.")
+                    elif isinstance(field_value, list) and None in field_value:
+                        raise ValueError(f"Found None in list in '{field_name}' field.")
+                    elif isinstance(field_value, str) and len(field_value.strip()) == 0:
+                        raise ValueError(f"Found empty value in '{field_name}' field.")
+                    elif isinstance(field_value, list) and len(field_value) == 0:
+                        raise ValueError(f"Found empty list in '{field_name}' field.")
+                
+
+        processed_datasets = defaultdict(dict)
+        for split in datasets:
+            for query_or_doc in datasets[split]:
+                if datasets[split][query_or_doc] != None:
+                    processor_init_args = datasets[split][query_or_doc]['init_args']
+                    processor = instantiate(
+                        processor_init_args, 
+                        out_folder=out_folder, 
+                        num_proc=num_proc, 
+                        overwrite=overwrite, 
+                        debug= debug if query_or_doc == "query" else False, 
+                        shuffle_labels= shuffle_labels if query_or_doc == "query" else False
+                        )
+                    dataset = processor.get_dataset()
+                    if query_or_doc == "query":
+                        sanity_checks(dataset)
+                    processed_datasets[split][query_or_doc] = dataset
+                else:
+                    processed_datasets[split][query_or_doc] = None
+        return processed_datasets
+    
+    @staticmethod
+    def check_instantiate(datasets, out_folder="datasets", num_proc=1, overwrite=False, debug=False):
+        processed_datasets = defaultdict(dict)
+        for split in datasets:
+            for query_or_doc in datasets[split]:
+                if datasets[split][query_or_doc] != None:
+                    processor_init_args = datasets[split][query_or_doc]["init_args"]
+                    processor = instantiate(
+                        processor_init_args, 
+                        out_folder=out_folder, 
+                        num_proc=num_proc, 
+                        overwrite=overwrite, 
+                        debug= debug if query_or_doc == 'query' else False, 
+                        oracle_provenance=  False, 
+                        shuffle_labels= False
+                        )          
+        return True
+
+
+
 # Base class that every processor interhits from 
 class Processor(object):
     """
@@ -140,70 +206,6 @@ class Wiki_monolingual_100w(Processor):
 
         del kilt_dataset
         return dataset
-
-
-class ProcessDatasets:
-    """
-    Static class to process datasets.
-
-    Methods:
-    - process: Process the datasets.
-    - check_instantiate: Check the instantiation of datasets.
-    """
-    
-    @staticmethod
-    def process(datasets, out_folder='datasets', num_proc=1, overwrite=False, debug=False, shuffle_labels=False):
-        def sanity_checks(dataset):
-            for example in tqdm(dataset, 'Checking dataset..'):
-                for field_name, field_value in example.items():
-                    if field_value is None:
-                        raise ValueError(f"Found None value in '{field_name}' field.")
-                    elif isinstance(field_value, list) and None in field_value:
-                        raise ValueError(f"Found None in list in '{field_name}' field.")
-                    elif isinstance(field_value, str) and len(field_value.strip()) == 0:
-                        raise ValueError(f"Found empty value in '{field_name}' field.")
-                    elif isinstance(field_value, list) and len(field_value) == 0:
-                        raise ValueError(f"Found empty list in '{field_name}' field.")
-                
-
-        processed_datasets = defaultdict(dict)
-        for split in datasets:
-            for query_or_doc in datasets[split]:
-                if datasets[split][query_or_doc] != None:
-                    processor_init_args = datasets[split][query_or_doc]['init_args']
-                    processor = instantiate(
-                        processor_init_args, 
-                        out_folder=out_folder, 
-                        num_proc=num_proc, 
-                        overwrite=overwrite, 
-                        debug= debug if query_or_doc == 'query' else False, 
-                        shuffle_labels= shuffle_labels if query_or_doc == 'query' else False
-                        )
-                    dataset = processor.get_dataset()
-                    if query_or_doc == 'query':
-                        sanity_checks(dataset)
-                    processed_datasets[split][query_or_doc] = dataset
-                else:
-                    processed_datasets[split][query_or_doc] = None
-        return processed_datasets
-    
-    @staticmethod
-    def check_instantiate(datasets, out_folder='datasets', num_proc=1, overwrite=False, debug=False):
-        processed_datasets = defaultdict(dict)
-        for split in datasets:
-            for query_or_doc in datasets[split]:
-                if datasets[split][query_or_doc] != None:
-                    processor_init_args = datasets[split][query_or_doc]['init_args']
-                    processor = instantiate(
-                        processor_init_args, 
-                        out_folder=out_folder, 
-                        num_proc=num_proc, 
-                        overwrite=overwrite, 
-                        debug= debug if query_or_doc == 'query' else False, 
-                        oracle_provenance=  False, 
-                        shuffle_labels= False
-                        )          
-        return True
 
 
 class MKQA(Processor):
