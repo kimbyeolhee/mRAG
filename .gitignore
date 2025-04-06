@@ -190,3 +190,6 @@ generated_queries/
 
 # outputs folder
 outputs/
+
+# path chunks folder
+path_chunks/
